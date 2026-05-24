@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-bg text-text antialiased;
+}
+
+/* Thin custom scrollbars to match the dark trading UI. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3142 transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2a3142;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #3a4255;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-border bg-bg-card;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors;
+  }
+  .btn-ghost {
+    @apply btn text-text-muted hover:bg-bg-hover hover:text-text;
+  }
+  .btn-accent {
+    @apply btn bg-accent text-white hover:bg-blue-600;
+  }
+  .input {
+    @apply rounded-md border border-border bg-bg-soft px-3 py-1.5 text-sm text-text placeholder:text-text-muted focus:border-accent focus:outline-none;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-xs font-medium;
+  }
+}
