@@ -63,7 +63,7 @@ export function ChartWorkspace({ symbol }: { symbol: string }) {
             </div>
             {quote ? (
               <div className="flex items-baseline gap-3">
-                <span className="text-2xl font-semibold tabular-nums">{formatPrice(quote.current)}</span>
+                <span className="text-2xl font-semibold tabular-nums">{formatPrice(quote.current, quote.currency)}</span>
                 <QuoteChange change={quote.change} percent={quote.percentChange} />
                 <span className="text-xs text-text-muted">{formatRelative(quote.timestamp)}</span>
               </div>
@@ -101,10 +101,10 @@ export function ChartWorkspace({ symbol }: { symbol: string }) {
       {/* Day range stats */}
       {quote && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MiniStat label="Open" value={formatPrice(quote.open)} />
-          <MiniStat label="Prev Close" value={formatPrice(quote.previousClose)} />
-          <MiniStat label="Day High" value={formatPrice(quote.high)} />
-          <MiniStat label="Day Low" value={formatPrice(quote.low)} />
+          <MiniStat label="Open" value={formatPrice(quote.open, quote.currency)} />
+          <MiniStat label="Prev Close" value={formatPrice(quote.previousClose, quote.currency)} />
+          <MiniStat label="Day High" value={formatPrice(quote.high, quote.currency)} />
+          <MiniStat label="Day Low" value={formatPrice(quote.low, quote.currency)} />
         </div>
       )}
 

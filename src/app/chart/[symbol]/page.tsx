@@ -1,4 +1,5 @@
 import { ChartWorkspace } from "@/components/chart/chart-workspace";
+import { normalizeSymbol } from "@/lib/symbols";
 
 export default async function ChartPage({
   params,
@@ -6,5 +7,5 @@ export default async function ChartPage({
   params: Promise<{ symbol: string }>;
 }) {
   const { symbol } = await params;
-  return <ChartWorkspace symbol={decodeURIComponent(symbol).toUpperCase()} />;
+  return <ChartWorkspace symbol={normalizeSymbol(decodeURIComponent(symbol))} />;
 }

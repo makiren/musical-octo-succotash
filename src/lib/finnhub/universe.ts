@@ -1,5 +1,7 @@
 // A small but representative universe used for the screener, search and mock
 // data. Base prices are rough anchors; mock quotes jitter around them.
+import type { SymbolSearchResult } from "@/lib/types";
+
 export interface UniverseEntry {
   symbol: string;
   name: string;
@@ -9,6 +11,7 @@ export interface UniverseEntry {
   pe: number | null;
   dividendYield: number | null; // percent
   beta: number | null;
+  currency?: string; // defaults to USD when unset
 }
 
 export const INDEX_SYMBOLS = ["SPY", "QQQ", "DIA", "IWM"];
@@ -52,6 +55,50 @@ export const UNIVERSE: UniverseEntry[] = [
   { symbol: "QCOM", name: "QUALCOMM Inc.", sector: "Technology", basePrice: 158, marketCap: 176000, pe: 17.8, dividendYield: 1.97, beta: 1.22 },
 ];
 
-export const UNIVERSE_MAP = new Map(UNIVERSE.map((u) => [u.symbol, u]));
+// Major Tokyo-listed names, kept separate from the US screener universe so the
+// two currencies don't get mixed into screener aggregates. Base prices are
+// rough JPY anchors used only as a mock fallback; real prices come from Yahoo.
+export const JP_UNIVERSE: UniverseEntry[] = [
+  { symbol: "7203.T", name: "Toyota Motor Corporation", sector: "Consumer Cyclical", basePrice: 2987, marketCap: 250000, pe: 9.5, dividendYield: 2.6, beta: 0.6, currency: "JPY" },
+  { symbol: "6758.T", name: "Sony Group Corporation", sector: "Technology", basePrice: 3000, marketCap: 110000, pe: 18.2, dividendYield: 0.7, beta: 0.95, currency: "JPY" },
+  { symbol: "9984.T", name: "SoftBank Group Corp.", sector: "Communication Services", basePrice: 9000, marketCap: 90000, pe: null, dividendYield: 0.5, beta: 1.3, currency: "JPY" },
+  { symbol: "9983.T", name: "Fast Retailing Co., Ltd.", sector: "Consumer Cyclical", basePrice: 48000, marketCap: 100000, pe: 36.0, dividendYield: 0.8, beta: 0.7, currency: "JPY" },
+  { symbol: "8306.T", name: "Mitsubishi UFJ Financial Group", sector: "Financial Services", basePrice: 1800, marketCap: 120000, pe: 12.5, dividendYield: 3.0, beta: 0.8, currency: "JPY" },
+  { symbol: "6861.T", name: "Keyence Corporation", sector: "Technology", basePrice: 60000, marketCap: 100000, pe: 38.0, dividendYield: 0.5, beta: 1.0, currency: "JPY" },
+  { symbol: "7974.T", name: "Nintendo Co., Ltd.", sector: "Communication Services", basePrice: 9500, marketCap: 60000, pe: 28.0, dividendYield: 1.5, beta: 0.6, currency: "JPY" },
+  { symbol: "6098.T", name: "Recruit Holdings Co., Ltd.", sector: "Technology", basePrice: 10000, marketCap: 90000, pe: 32.0, dividendYield: 0.9, beta: 1.1, currency: "JPY" },
+  { symbol: "8035.T", name: "Tokyo Electron Limited", sector: "Technology", basePrice: 25000, marketCap: 110000, pe: 30.0, dividendYield: 1.2, beta: 1.4, currency: "JPY" },
+  { symbol: "4063.T", name: "Shin-Etsu Chemical Co., Ltd.", sector: "Basic Materials", basePrice: 5000, marketCap: 80000, pe: 20.0, dividendYield: 1.8, beta: 0.9, currency: "JPY" },
+  { symbol: "9432.T", name: "Nippon Telegraph and Telephone", sector: "Communication Services", basePrice: 155, marketCap: 130000, pe: 12.0, dividendYield: 3.3, beta: 0.5, currency: "JPY" },
+  { symbol: "6501.T", name: "Hitachi, Ltd.", sector: "Technology", basePrice: 3800, marketCap: 120000, pe: 22.0, dividendYield: 1.3, beta: 1.0, currency: "JPY" },
+  { symbol: "7267.T", name: "Honda Motor Co., Ltd.", sector: "Consumer Cyclical", basePrice: 1550, marketCap: 80000, pe: 8.0, dividendYield: 3.8, beta: 0.7, currency: "JPY" },
+  { symbol: "8058.T", name: "Mitsubishi Corporation", sector: "Industrials", basePrice: 2800, marketCap: 90000, pe: 11.0, dividendYield: 3.2, beta: 0.9, currency: "JPY" },
+  { symbol: "6902.T", name: "Denso Corporation", sector: "Consumer Cyclical", basePrice: 2200, marketCap: 50000, pe: 15.0, dividendYield: 2.5, beta: 0.9, currency: "JPY" },
+];
+
+export const ALL_SYMBOLS: UniverseEntry[] = [...UNIVERSE, ...JP_UNIVERSE];
+
+export const UNIVERSE_MAP = new Map(ALL_SYMBOLS.map((u) => [u.symbol, u]));
 
 export const SECTORS = Array.from(new Set(UNIVERSE.map((u) => u.sector))).sort();
+
+// Symbol/company search across both US and Japanese names, plus a passthrough
+// for a bare 4-digit Tokyo code so any listed name can be looked up by number.
+export function searchUniverse(query: string): SymbolSearchResult[] {
+  const q = query.trim().toUpperCase();
+  if (!q) return [];
+  const results: SymbolSearchResult[] = ALL_SYMBOLS.filter(
+    (u) => u.symbol.includes(q) || u.name.toUpperCase().includes(q),
+  )
+    .slice(0, 12)
+    .map((u) => ({
+      symbol: u.symbol,
+      description: u.name,
+      type: "Common Stock",
+      exchange: u.currency === "JPY" ? "Tokyo" : "US",
+    }));
+  if (/^\d{4}$/.test(q) && !results.some((r) => r.symbol === `${q}.T`)) {
+    results.unshift({ symbol: `${q}.T`, description: `Tokyo ${q}`, type: "Common Stock", exchange: "Tokyo" });
+  }
+  return results.slice(0, 12);
+}

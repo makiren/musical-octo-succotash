@@ -64,7 +64,7 @@ export function WatchlistTable({ compact = false, limit }: { compact?: boolean; 
                 </td>
               )}
               <td className="px-3 py-2.5 text-right tabular-nums">
-                {q ? formatPrice(q.current) : "…"}
+                {q ? formatPrice(q.current, q.currency) : "…"}
               </td>
               <td className="px-3 py-2.5 text-right">
                 {q ? (

@@ -9,7 +9,8 @@ import type {
   ScreenerRow,
   SymbolSearchResult,
 } from "@/lib/types";
-import { UNIVERSE, UNIVERSE_MAP, type UniverseEntry } from "./universe";
+import { UNIVERSE, UNIVERSE_MAP, searchUniverse, type UniverseEntry } from "./universe";
+import { currencyForSymbol, isJpSymbol } from "@/lib/symbols";
 
 // Deterministic PRNG (mulberry32) so a given symbol always yields the same
 // series — keeps charts stable across refetches while still looking organic.
@@ -116,17 +117,19 @@ export function mockQuote(symbol: string): Quote {
     open: today.open,
     previousClose,
     timestamp: today.time,
+    currency: currencyForSymbol(symbol),
   };
 }
 
 export function mockProfile(symbol: string): CompanyProfile {
   const entry = entryFor(symbol);
+  const jp = isJpSymbol(symbol);
   return {
     symbol,
     name: entry.name,
-    country: "US",
-    currency: "USD",
-    exchange: "NASDAQ/NYSE",
+    country: jp ? "JP" : "US",
+    currency: entry.currency ?? (jp ? "JPY" : "USD"),
+    exchange: jp ? "Tokyo" : "NASDAQ/NYSE",
     industry: entry.sector,
     logo: "",
     marketCap: entry.marketCap,
@@ -198,18 +201,7 @@ export function mockMarketNews(count = 20): NewsItem[] {
 }
 
 export function mockSearch(query: string): SymbolSearchResult[] {
-  const q = query.trim().toUpperCase();
-  if (!q) return [];
-  return UNIVERSE.filter(
-    (u) => u.symbol.includes(q) || u.name.toUpperCase().includes(q),
-  )
-    .slice(0, 12)
-    .map((u) => ({
-      symbol: u.symbol,
-      description: u.name,
-      type: "Common Stock",
-      exchange: "US",
-    }));
+  return searchUniverse(query);
 }
 
 export function mockScreenerRows(): ScreenerRow[] {

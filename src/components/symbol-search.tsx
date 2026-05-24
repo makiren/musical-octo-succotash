@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { normalizeSymbol } from "@/lib/symbols";
 
 export function SymbolSearch({ className }: { className?: string }) {
   const router = useRouter();
@@ -55,7 +56,7 @@ export function SymbolSearch({ className }: { className?: string }) {
       e.preventDefault();
       const pick = results[highlight];
       if (pick) go(pick.symbol);
-      else if (query.trim()) go(query.trim().toUpperCase());
+      else if (query.trim()) go(normalizeSymbol(query));
     } else if (e.key === "Escape") {
       setOpen(false);
     }
