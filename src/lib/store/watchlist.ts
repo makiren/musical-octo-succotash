@@ -1,6 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { serverBackedStorage } from "./server-storage";
 
 function defaultSymbols(): string[] {
   const env = process.env.NEXT_PUBLIC_DEFAULT_WATCHLIST;
@@ -35,6 +36,6 @@ export const useWatchlist = create<WatchlistState>()(
       has: (symbol) => get().symbols.includes(symbol.toUpperCase()),
       reorder: (symbols) => set({ symbols }),
     }),
-    { name: "tad-watchlist" },
+    { name: "tad-watchlist", storage: serverBackedStorage },
   ),
 );
