@@ -25,12 +25,13 @@ export function KeyStats({ symbol }: { symbol: string }) {
   if (!data) return <p className="text-sm text-text-muted">No data.</p>;
 
   const f = data.financials;
+  const cur = data.profile.currency;
   return (
     <div>
       <div className="grid grid-cols-2 gap-x-6">
         <Stat label="Market Cap" value={formatMarketCap(f.marketCap)} />
         <Stat label="P/E (TTM)" value={formatNumber(f.peRatio)} />
-        <Stat label="EPS (TTM)" value={f.eps !== null ? formatPrice(f.eps) : "—"} />
+        <Stat label="EPS (TTM)" value={f.eps !== null ? formatPrice(f.eps, cur) : "—"} />
         <Stat label="P/B" value={formatNumber(f.pbRatio)} />
         <Stat label="P/S" value={formatNumber(f.psRatio)} />
         <Stat label="Beta" value={formatNumber(f.beta)} />
@@ -38,8 +39,8 @@ export function KeyStats({ symbol }: { symbol: string }) {
         <Stat label="ROE" value={f.roe !== null ? formatPercent(f.roe) : "—"} />
         <Stat label="Net Margin" value={f.netMargin !== null ? formatPercent(f.netMargin) : "—"} />
         <Stat label="Rev Growth" value={f.revenueGrowth !== null ? formatPercent(f.revenueGrowth) : "—"} />
-        <Stat label="52W High" value={formatPrice(f.week52High)} />
-        <Stat label="52W Low" value={formatPrice(f.week52Low)} />
+        <Stat label="52W High" value={formatPrice(f.week52High, cur)} />
+        <Stat label="52W Low" value={formatPrice(f.week52Low, cur)} />
       </div>
       <div className="mt-3 border-t border-border pt-3 text-xs text-text-muted">
         <div className="flex flex-wrap gap-x-4 gap-y-1">

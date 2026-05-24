@@ -6,6 +6,7 @@ import { useAlerts } from "@/lib/store/alerts";
 import { useToast } from "@/lib/store/toast";
 import { Toaster } from "./toaster";
 import { formatPrice } from "@/lib/utils";
+import { currencyForSymbol } from "@/lib/symbols";
 
 /**
  * Mounted once at the app root. Polls quotes for every symbol that has an
@@ -33,10 +34,11 @@ export function AlertWatcher() {
     for (const [sym, q] of Object.entries(quotes)) prices[sym] = q.current;
     const triggered = evaluate(prices);
     for (const a of triggered) {
+      const cur = currencyForSymbol(a.symbol);
       push({
         variant: "warning",
-        title: `Alert: ${a.symbol} ${a.condition} ${formatPrice(a.target)}`,
-        description: `Now trading at ${formatPrice(prices[a.symbol])}.`,
+        title: `Alert: ${a.symbol} ${a.condition} ${formatPrice(a.target, cur)}`,
+        description: `Now trading at ${formatPrice(prices[a.symbol], cur)}.`,
       });
     }
   }, [quotes, evaluate, push]);

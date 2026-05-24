@@ -7,7 +7,8 @@ import { api } from "@/lib/api";
 import { usePortfolio } from "@/lib/store/portfolio";
 import { useHydrated } from "@/lib/use-hydrated";
 import { PageHeader } from "@/components/page-header";
-import { cn, formatPercent, formatPrice } from "@/lib/utils";
+import { cn, formatNumber, formatPercent, formatPrice } from "@/lib/utils";
+import { currencyForSymbol } from "@/lib/symbols";
 
 interface Position {
   symbol: string;
@@ -20,6 +21,7 @@ interface Position {
   pnl: number;
   pnlPct: number;
   dayPnl: number;
+  currency: string;
 }
 
 export function PortfolioClient() {
@@ -65,6 +67,7 @@ export function PortfolioClient() {
         pnl,
         pnlPct: cost > 0 ? (pnl / cost) * 100 : 0,
         dayPnl: qty * change,
+        currency: q?.currency ?? currencyForSymbol(symbol),
       };
     });
   }, [lots, quotes]);
@@ -74,6 +77,9 @@ export function PortfolioClient() {
     const cost = positions.reduce((s, p) => s + p.cost, 0);
     const dayPnl = positions.reduce((s, p) => s + p.dayPnl, 0);
     const pnl = value - cost;
+    // Totals only make sense in a single currency; show one when all holdings
+    // share it, otherwise fall back to a neutral number format.
+    const currencies = new Set(positions.map((p) => p.currency));
     return {
       value,
       cost,
@@ -81,8 +87,12 @@ export function PortfolioClient() {
       pnlPct: cost > 0 ? (pnl / cost) * 100 : 0,
       dayPnl,
       dayPnlPct: value - dayPnl > 0 ? (dayPnl / (value - dayPnl)) * 100 : 0,
+      currency: currencies.size === 1 ? [...currencies][0] : null,
     };
   }, [positions]);
+
+  const fmtTotal = (n: number) =>
+    totals.currency ? formatPrice(n, totals.currency) : formatNumber(n);
 
   return (
     <>
@@ -90,17 +100,17 @@ export function PortfolioClient() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <SummaryCard label="Market Value" value={formatPrice(totals.value)} />
-        <SummaryCard label="Cost Basis" value={formatPrice(totals.cost)} />
+        <SummaryCard label="Market Value" value={fmtTotal(totals.value)} />
+        <SummaryCard label="Cost Basis" value={fmtTotal(totals.cost)} />
         <SummaryCard
           label="Total P&L"
-          value={formatPrice(totals.pnl)}
+          value={fmtTotal(totals.pnl)}
           sub={formatPercent(totals.pnlPct)}
           tone={totals.pnl}
         />
         <SummaryCard
           label="Day P&L"
-          value={formatPrice(totals.dayPnl)}
+          value={fmtTotal(totals.dayPnl)}
           sub={formatPercent(totals.dayPnlPct)}
           tone={totals.dayPnl}
         />
@@ -145,14 +155,14 @@ export function PortfolioClient() {
                     </Link>
                   </td>
                   <td className="px-3 py-2.5 text-right tabular-nums">{p.quantity}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{formatPrice(p.avgCost)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{p.price ? formatPrice(p.price) : "…"}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums">{formatPrice(p.value)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">{formatPrice(p.avgCost, p.currency)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">{p.price ? formatPrice(p.price, p.currency) : "…"}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums">{formatPrice(p.value, p.currency)}</td>
                   <td className={cn("px-3 py-2.5 text-right tabular-nums", toneClass(p.dayPnl))}>
-                    {formatPrice(p.dayPnl)}
+                    {formatPrice(p.dayPnl, p.currency)}
                   </td>
                   <td className={cn("px-3 py-2.5 text-right tabular-nums", toneClass(p.pnl))}>
-                    {formatPrice(p.pnl)} <span className="text-xs">({formatPercent(p.pnlPct)})</span>
+                    {formatPrice(p.pnl, p.currency)} <span className="text-xs">({formatPercent(p.pnlPct)})</span>
                   </td>
                   <td className="px-3 py-2.5 text-right tabular-nums text-text-muted">
                     {totals.value > 0 ? `${((p.value / totals.value) * 100).toFixed(1)}%` : "—"}
@@ -176,7 +186,7 @@ export function PortfolioClient() {
                 <div className="flex items-center gap-3">
                   <span className="font-semibold text-text-bright">{l.symbol}</span>
                   <span className="text-text-muted">
-                    {l.quantity} @ {formatPrice(l.costBasis)}
+                    {l.quantity} @ {formatPrice(l.costBasis, currencyForSymbol(l.symbol))}
                   </span>
                 </div>
                 <button
