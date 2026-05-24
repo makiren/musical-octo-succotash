@@ -1,6 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { serverBackedStorage } from "./server-storage";
 
 export type AlertCondition = "above" | "below";
 
@@ -67,6 +68,6 @@ export const useAlerts = create<AlertState>()(
       },
       clearTriggered: () => set({ alerts: get().alerts.filter((a) => !a.triggeredAt) }),
     }),
-    { name: "tad-alerts" },
+    { name: "tad-alerts", storage: serverBackedStorage },
   ),
 );

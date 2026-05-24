@@ -21,6 +21,7 @@ import {
   mockScreenerRows,
   mockSearch,
 } from "./mock";
+import { fetchStooqCandles, stooqSupports } from "./stooq";
 
 const BASE = "https://finnhub.io/api/v1";
 const KEY = process.env.FINNHUB_API_KEY?.trim();
@@ -76,12 +77,13 @@ export async function getQuote(symbol: string): Promise<Quote> {
   };
 }
 
-export async function getCandles(
+// Finnhub's /stock/candle endpoint is premium-only; free keys get a 403. This
+// throws on any non-ok response so callers can fall back to another source.
+async function fetchFinnhubCandles(
   symbol: string,
   resolution: Resolution,
-  count = 300,
+  count: number,
 ): Promise<Candle[]> {
-  if (isMockMode()) return mockCandles(symbol, resolution, count);
   const step = RESOLUTION_SECONDS[resolution];
   const to = Math.floor(Date.now() / 1000);
   const from = to - step * count;
@@ -103,6 +105,40 @@ export async function getCandles(
     close: raw.c[i],
     volume: raw.v[i],
   }));
+}
+
+/**
+ * Candle sourcing, in priority order:
+ *  - Daily/weekly/monthly: Stooq (free real EOD history, no key required).
+ *  - Intraday: Finnhub (premium) when a key is configured.
+ *  - Anything that fails or is unavailable falls back to deterministic mock
+ *    data, so the chart always renders something instead of erroring.
+ */
+export async function getCandles(
+  symbol: string,
+  resolution: Resolution,
+  count = 300,
+): Promise<Candle[]> {
+  if (stooqSupports(resolution)) {
+    const stooq = await fetchStooqCandles(symbol, resolution, count);
+    if (stooq && stooq.length) return stooq;
+    if (!isMockMode()) {
+      try {
+        const fh = await fetchFinnhubCandles(symbol, resolution, count);
+        if (fh.length) return fh;
+      } catch {
+        /* premium-gated or unavailable — fall through to mock */
+      }
+    }
+  } else if (!isMockMode()) {
+    try {
+      const fh = await fetchFinnhubCandles(symbol, resolution, count);
+      if (fh.length) return fh;
+    } catch {
+      /* fall through to mock */
+    }
+  }
+  return mockCandles(symbol, resolution, count);
 }
 
 export async function searchSymbols(query: string): Promise<SymbolSearchResult[]> {
